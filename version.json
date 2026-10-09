@@ -1,0 +1,10 @@
+﻿{
+  "Version": "1.3.1",
+  "PublishedAt": "2026-10-09 11:05",
+  "ReleaseNotes": "\u2022 \u0110\u1ED3ng b\u1ED9 2 chi\u1EC1u ho\u00E0n h\u1EA3o 1:1 gi\u1EEFa M\u00E1y A v\u00E0 M\u00E1y B qua Dropbox (ch\u1EC9nh s\u1EEDa, \u0111\u1ED5i t\u00EAn, x\u00F3a bin, g\u1EAFn tag \u0111\u1EC1u \u0111\u1ED3ng b\u1ED9 t\u1EE9c th\u00EC)\n\u2022 T\u1EAFt ho\u00E0n to\u00E0n t\u00EDnh n\u0103ng t\u1EF1 \u0111\u1ED9ng qu\u00E9t l\u1EA1i \u1ED5 \u0111\u0129a ng\u1EA7m (ch\u1EC9 qu\u00E9t v\u00E0 n\u1EA1p khi ng\u01B0\u1EDDi d\u00F9ng ch\u1EE7 \u0111\u1ED9ng b\u1EA5m \u0027Th\u01B0 m\u1EE5c\u0027 ho\u1EB7c k\u00E9o th\u1EA3)",
+  "PackageUrl": "https://github.com/dincenzo2-wq/Z-Station-Studio/raw/main/Z-Station_Studio_Update.zip",
+  "ManifestUrl": "https://raw.githubusercontent.com/dincenzo2-wq/Z-Station-Studio/main/version.json",
+  "PackageSizeBytes": 66484553,
+  "SourceExeLastWriteUtcTicks": 639270795370000000,
+  "SourceExeSha256": "F529E66AB58D02F6C37FF349DDFE44A57F31542A12DB15D738E3AF7FCAEF3E81"
+}

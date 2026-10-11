@@ -1,0 +1,22 @@
+# Build & Output
+bin/
+obj/
+PublishOut/
+publish_out/
+*.exe
+*.zip
+*.dll
+*.pdb
+
+# Local caches & user data
+*.log
+accounts-vault.json
+sfx-settings-sync.json
+WaveformCache/
+
+# Node & IDE
+node_modules/
+.vs/
+.idea/
+*.user
+*.suo

@@ -1,0 +1,10 @@
+﻿{
+    "Version":  "1.3.1",
+    "PublishedAt":  "2026-10-11 14:55",
+    "ReleaseNotes":  "• Đồng bộ 2 chiều hoàn hảo 1:1 giữa Máy A và Máy B qua Dropbox (chỉnh sửa, đổi tên, xóa bin, gắn tag đều đồng bộ tức thì)\n• Tắt hoàn toàn tính năng tự động quét lại ổ đĩa ngầm (chỉ quét và nạp khi người dùng chủ động bấm \u0027Thư mục\u0027 hoặc kéo thả)",
+    "PackageUrl":  "https://github.com/dincenzo2-wq/Z-Station-Studio/raw/main/Z-Station_Studio_Update.zip",
+    "ManifestUrl":  "https://raw.githubusercontent.com/dincenzo2-wq/Z-Station-Studio/main/version.json",
+    "PackageSizeBytes":  66327874,
+    "SourceExeLastWriteUtcTicks":  639273021104118500,
+    "SourceExeSha256":  "8935083E76AFA58B77E3B5B39B2CE88E05D4109662F566D5AC868DFA0AB8C77B"
+}

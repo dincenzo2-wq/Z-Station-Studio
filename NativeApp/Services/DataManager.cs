@@ -115,6 +115,9 @@ namespace ZStationStudio.Services
             }
             catch { }
 
+            string localSync = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sfx-settings-sync.json");
+            if (File.Exists(localSync)) return localSync;
+
             if (File.Exists(OwnerMasterSyncFile))
             {
                 return OwnerMasterSyncFile;
@@ -124,9 +127,6 @@ namespace ZStationStudio.Services
             {
                 return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UserData", "sfx-settings-sync.json");
             }
-
-            string localSync = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sfx-settings-sync.json");
-            if (File.Exists(localSync)) return localSync;
 
             string[] candidatePaths = new[]
             {
@@ -332,7 +332,7 @@ namespace ZStationStudio.Services
             return Path.Combine(DataDir, "TagBackups");
         }
 
-        public static SfxItem CreateSfxItemFast(string path, List<string> tags, double duration = 0, long knownSize = 0, string? relativePath = null)
+        public static SfxItem CreateSfxItemFast(string path, List<string> tags, double duration = 0, long knownSize = 0, string? relativePath = null, DateTime? knownCreatedDate = null)
         {
             string fn = Path.GetFileName(path);
             string folderName = Path.GetFileName(Path.GetDirectoryName(path) ?? "") ?? "";
@@ -344,18 +344,31 @@ namespace ZStationStudio.Services
 
             long size = knownSize;
             DateTime lastMod = DateTime.Now;
+            DateTime createdDate = (knownCreatedDate.HasValue && knownCreatedDate.Value != DateTime.MinValue && knownCreatedDate.Value.Year > 1980)
+                ? knownCreatedDate.Value
+                : DateTime.MinValue;
             bool isCloud = false;
 
-            // Only touch the disk if knownSize <= 0 (not in Library Index Cache)
-            if (size <= 0)
+            // Only touch the disk if knownSize <= 0 or createdDate is not determined
+            if (size <= 0 || createdDate == DateTime.MinValue)
             {
-                var fi = new FileInfo(path);
-                if (fi.Exists)
+                try
                 {
-                    size = fi.Length;
-                    lastMod = fi.LastWriteTime;
+                    var fi = new FileInfo(path);
+                    if (fi.Exists)
+                    {
+                        if (size <= 0) size = fi.Length;
+                        lastMod = fi.LastWriteTime;
+                        if (createdDate == DateTime.MinValue)
+                        {
+                            createdDate = fi.CreationTime;
+                            if (createdDate.Year < 1980) createdDate = fi.LastWriteTime;
+                        }
+                    }
                 }
-                if (isVid)
+                catch { }
+
+                if (isVid && size <= 0)
                 {
                     isCloud = VideoPreviewService.IsCloudPlaceholder(path);
                 }
@@ -371,6 +384,7 @@ namespace ZStationStudio.Services
                 FolderName = folderName,
                 Duration = duration,
                 FileSize = size,
+                CreatedDate = createdDate,
                 LastModified = lastMod,
                 IsVideo = isVid,
                 IsImage = isImg,
@@ -410,7 +424,7 @@ namespace ZStationStudio.Services
             // 2. Read metadata cache (duration, size, relativePath) from native Library Index Cache first, then fallback to old Electron index
             var items = new List<SfxItem>();
             var itemsMap = new Dictionary<string, SfxItem>(StringComparer.OrdinalIgnoreCase);
-            var cachedMeta = new Dictionary<string, (double Duration, long Size, string RelPath)>(StringComparer.OrdinalIgnoreCase);
+            var cachedMeta = new Dictionary<string, (double Duration, long Size, string RelPath, DateTime? CreatedDate)>(StringComparer.OrdinalIgnoreCase);
 
             string nativeIndexCacheFile = GetLibraryIndexCacheFile();
             if (File.Exists(nativeIndexCacheFile))
@@ -427,7 +441,7 @@ namespace ZStationStudio.Services
                             string norm = NormalizePath(e.Path);
                             if (!string.IsNullOrEmpty(norm))
                             {
-                                cachedMeta[norm] = (e.Duration, e.Size, string.IsNullOrEmpty(e.RelativePath) ? Path.GetFileName(e.Path) : e.RelativePath);
+                                cachedMeta[norm] = (e.Duration, e.Size, string.IsNullOrEmpty(e.RelativePath) ? Path.GetFileName(e.Path) : e.RelativePath, e.CreatedDate);
                             }
                         }
                     }
@@ -464,16 +478,42 @@ namespace ZStationStudio.Services
                                 double dur = f.TryGetProperty("duration", out var dEl) && dEl.ValueKind == JsonValueKind.Number ? dEl.GetDouble() : 0;
                                 long size = f.TryGetProperty("size", out var sEl) && sEl.ValueKind == JsonValueKind.Number ? sEl.GetInt64() : 0;
 
+                                DateTime? birthDate = null;
+                                if (f.TryGetProperty("birthtimeMs", out var btEl) && btEl.ValueKind == JsonValueKind.Number)
+                                {
+                                    try
+                                    {
+                                        double ms = btEl.GetDouble();
+                                        if (ms > 0)
+                                        {
+                                            birthDate = DateTimeOffset.FromUnixTimeMilliseconds((long)ms).LocalDateTime;
+                                        }
+                                    }
+                                    catch { }
+                                }
+                                if (!birthDate.HasValue && f.TryGetProperty("mtimeMs", out var mtEl) && mtEl.ValueKind == JsonValueKind.Number)
+                                {
+                                    try
+                                    {
+                                        double ms = mtEl.GetDouble();
+                                        if (ms > 0)
+                                        {
+                                            birthDate = DateTimeOffset.FromUnixTimeMilliseconds((long)ms).LocalDateTime;
+                                        }
+                                    }
+                                    catch { }
+                                }
+
                                 if (!cachedMeta.ContainsKey(norm) || (dur > 0 && cachedMeta[norm].Duration <= 0))
                                 {
-                                    cachedMeta[norm] = (dur, size, rel);
+                                    cachedMeta[norm] = (dur, size, rel, birthDate);
                                 }
 
                                 // Only load directly from oldIndexPath if user has no VirtualFolders configured yet
                                 if (Settings.VirtualFolders.Count == 0 && !IsPathInDeletedFolders(path) && File.Exists(path) && !itemsMap.ContainsKey(norm))
                                 {
                                     var tags = GetTagsForFile(path, fn);
-                                    var item = CreateSfxItemFast(path, tags, dur, size, rel);
+                                    var item = CreateSfxItemFast(path, tags, dur, size, rel, birthDate);
                                     items.Add(item);
                                     itemsMap[norm] = item;
                                 }
@@ -541,7 +581,7 @@ namespace ZStationStudio.Services
                                 if (cachedMeta.TryGetValue(norm, out var meta) && meta.Size > 0)
                                 {
                                     var tags = GetTagsForFile(fPath, Path.GetFileName(fPath));
-                                    var item = CreateSfxItemFast(fPath, tags, meta.Duration, meta.Size, meta.RelPath);
+                                    var item = CreateSfxItemFast(fPath, tags, meta.Duration, meta.Size, meta.RelPath, meta.CreatedDate);
                                     items.Add(item);
                                     itemsMap[norm] = item;
                                 }
@@ -550,7 +590,8 @@ namespace ZStationStudio.Services
                                     var tags = GetTagsForFile(fPath, Path.GetFileName(fPath));
                                     double dur = cachedMeta.TryGetValue(norm, out var m2) ? m2.Duration : 0;
                                     string? rel = cachedMeta.TryGetValue(norm, out var m3) ? m3.RelPath : null;
-                                    var item = CreateSfxItemFast(fPath, tags, dur, 0, rel);
+                                    DateTime? cDate = cachedMeta.TryGetValue(norm, out var m4) ? m4.CreatedDate : null;
+                                    var item = CreateSfxItemFast(fPath, tags, dur, 0, rel, cDate);
                                     items.Add(item);
                                     itemsMap[norm] = item;
                                 }
@@ -616,7 +657,8 @@ namespace ZStationStudio.Services
                     Path = i.FilePath,
                     Duration = i.Duration,
                     Size = i.FileSize,
-                    RelativePath = i.RelativePath
+                    RelativePath = i.RelativePath,
+                    CreatedDate = i.CreatedDate != DateTime.MinValue ? i.CreatedDate : (DateTime?)null
                 }).ToList();
 
                 string json = JsonSerializer.Serialize(snapshot);
@@ -2059,7 +2101,7 @@ namespace ZStationStudio.Services
                             }
 
                             var tags = GetTagsForFile(path, fi.Name);
-                            item = CreateSfxItemFast(path, tags, dur, fi.Length);
+                            item = CreateSfxItemFast(path, tags, dur, fi.Length, null, fi.CreationTime);
 
                             allFiles.Add(item);
                             addedItems.Add(item);

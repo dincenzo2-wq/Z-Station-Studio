@@ -1,10 +1,10 @@
 ﻿{
     "Version":  "1.3.1",
-    "PublishedAt":  "2026-10-11 14:55",
-    "ReleaseNotes":  "• Đồng bộ 2 chiều hoàn hảo 1:1 giữa Máy A và Máy B qua Dropbox (chỉnh sửa, đổi tên, xóa bin, gắn tag đều đồng bộ tức thì)\n• Tắt hoàn toàn tính năng tự động quét lại ổ đĩa ngầm (chỉ quét và nạp khi người dùng chủ động bấm \u0027Thư mục\u0027 hoặc kéo thả)",
+    "PublishedAt":  "2026-11-10 15:33",
+    "ReleaseNotes":  "• Bổ sung cột \u0027NGÀY TẠO\u0027 (Date Created) trong bảng danh sách file âm thanh / media, hỗ trợ click sắp xếp tăng dần / giảm dần\n• Đồng bộ 2 chiều hoàn hảo 1:1 giữa Máy A và Máy B qua Dropbox (chỉnh sửa, đổi tên, xóa bin, gắn tag đều đồng bộ tức thì)\n• Tắt tính năng tự động quét lại ổ đĩa ngầm (chỉ quét và nạp khi người dùng chủ động nạp thư mục)",
     "PackageUrl":  "https://github.com/dincenzo2-wq/Z-Station-Studio/raw/main/Z-Station_Studio_Update.zip",
     "ManifestUrl":  "https://raw.githubusercontent.com/dincenzo2-wq/Z-Station-Studio/main/version.json",
-    "PackageSizeBytes":  66327874,
-    "SourceExeLastWriteUtcTicks":  639273021104118500,
-    "SourceExeSha256":  "8935083E76AFA58B77E3B5B39B2CE88E05D4109662F566D5AC868DFA0AB8C77B"
+    "PackageSizeBytes":  66329678,
+    "SourceExeLastWriteUtcTicks":  639298964122428515,
+    "SourceExeSha256":  "EC6BEC8018CB36F021822E50EFEBC34BE416C3F16E76FCA863F38DD1B13D15B8"
 }

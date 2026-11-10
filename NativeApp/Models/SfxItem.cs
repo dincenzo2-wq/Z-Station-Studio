@@ -18,6 +18,25 @@ namespace ZStationStudio.Models
         public long FileSize { get; set; }
         public DateTime LastModified { get; set; }
 
+        private DateTime _createdDate;
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set
+            {
+                if (_createdDate != value)
+                {
+                    _createdDate = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CreatedDateText));
+                }
+            }
+        }
+
+        public string CreatedDateText => (_createdDate != DateTime.MinValue && _createdDate.Year > 1980)
+            ? _createdDate.ToString("dd/MM/yyyy HH:mm")
+            : "--";
+
         private static readonly SolidColorBrush _videoBadgeBg = FreezeBrush(new SolidColorBrush(Color.FromRgb(0x18, 0x2B, 0x3A)));
         private static readonly SolidColorBrush _videoBadgeBorder = FreezeBrush(new SolidColorBrush(Color.FromRgb(0x02, 0x84, 0xC7)));
         private static readonly SolidColorBrush _videoBadgeFg = FreezeBrush(new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8)));

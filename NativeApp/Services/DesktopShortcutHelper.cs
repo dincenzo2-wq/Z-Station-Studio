@@ -50,8 +50,13 @@ namespace ZStationStudio.Services
 
                 if (string.IsNullOrEmpty(currentExe) || !File.Exists(currentExe)) return;
 
-                string ownerDropboxExe = @"F:\Business Dropbox\Tran Vinh\Tài Nguyên Dựng Phim\DaVinci Resolve Studio\Z-Station_Studio\Z-Station_Studio.exe";
-                if (DataManager.IsStandaloneInstall && File.Exists(ownerDropboxExe))
+                string[] ownerDropboxExes = new[]
+                {
+                    @"V:\03_Workspace & Tools\Dev & Scripting\Z-Station_Studio\Z-Station_Studio.exe",
+                    @"F:\Business Dropbox\Tran Vinh\03_Workspace & Tools\Dev & Scripting\Z-Station_Studio\Z-Station_Studio.exe",
+                    @"F:\Business Dropbox\Tran Vinh\Tài Nguyên Dựng Phim\DaVinci Resolve Studio\Z-Station_Studio\Z-Station_Studio.exe"
+                };
+                if (DataManager.IsStandaloneInstall && Array.Exists(ownerDropboxExes, File.Exists))
                 {
                     // Running standalone test on the owner's machine: preserve owner's personal Dropbox shortcut
                     return;

@@ -2178,7 +2178,8 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="36"/>  <!-- Play Header -->
                             <ColumnDefinition Width="*"/>   <!-- Title & Tags -->
-                            <ColumnDefinition Width="160"/> <!-- Folder / Path -->
+                            <ColumnDefinition Width="150"/> <!-- Folder / Path -->
+                            <ColumnDefinition Width="125"/> <!-- Date Created -->
                             <ColumnDefinition Width="72"/>  <!-- Duration -->
                             <ColumnDefinition Width="56"/>  <!-- Ext -->
                             <ColumnDefinition Width="72"/>  <!-- Size -->
@@ -2203,8 +2204,16 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- NGÀY TẠO -->
+                        <Button Grid.Column="3" x:Name="SortCreatedHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="CreatedDate" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="NGÀY TẠO" Style="{StaticResource HeaderSortTextStyle}"/>
+                                <TextBlock x:Name="SortCreatedArrow" Text=" ▾" Style="{StaticResource HeaderSortArrowStyle}" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Button>
+
                         <!-- THỜI LƯỢNG -->
-                        <Button Grid.Column="3" x:Name="SortDurationHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Duration" HorizontalAlignment="Right">
+                        <Button Grid.Column="4" x:Name="SortDurationHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Duration" HorizontalAlignment="Right">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="THỜI LƯỢNG" Style="{StaticResource HeaderSortTextStyle}"/>
                                 <TextBlock x:Name="SortDurationArrow" Text=" ▾" Style="{StaticResource HeaderSortArrowStyle}" Visibility="Collapsed"/>
@@ -2212,7 +2221,7 @@
                         </Button>
 
                         <!-- ĐỊNH DẠNG -->
-                        <Button Grid.Column="4" x:Name="SortExtHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Extension" HorizontalAlignment="Center">
+                        <Button Grid.Column="5" x:Name="SortExtHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Extension" HorizontalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="LOẠI" Style="{StaticResource HeaderSortTextStyle}"/>
                                 <TextBlock x:Name="SortExtArrow" Text=" ▾" Style="{StaticResource HeaderSortArrowStyle}" Visibility="Collapsed"/>
@@ -2220,7 +2229,7 @@
                         </Button>
 
                         <!-- DUNG LƯỢNG -->
-                        <Button Grid.Column="5" x:Name="SortSizeHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Size" HorizontalAlignment="Right">
+                        <Button Grid.Column="6" x:Name="SortSizeHeaderBtn" Style="{StaticResource HeaderSortButtonStyle}" Click="SortHeader_Click" Tag="Size" HorizontalAlignment="Right">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="DUNG LƯỢNG" Style="{StaticResource HeaderSortTextStyle}"/>
                                 <TextBlock x:Name="SortSizeArrow" Text=" ▾" Style="{StaticResource HeaderSortArrowStyle}" Visibility="Collapsed"/>
@@ -2247,7 +2256,8 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="36"/>  <!-- Play Icon -->
                                     <ColumnDefinition Width="*"/>   <!-- Title & Tags -->
-                                    <ColumnDefinition Width="160"/> <!-- Folder / Path -->
+                                    <ColumnDefinition Width="150"/> <!-- Folder / Path -->
+                                    <ColumnDefinition Width="125"/> <!-- Date Created -->
                                     <ColumnDefinition Width="72"/>  <!-- Duration -->
                                     <ColumnDefinition Width="56"/>  <!-- Ext -->
                                     <ColumnDefinition Width="72"/>  <!-- Size -->
@@ -2283,16 +2293,19 @@
                                 <!-- Folder -->
                                 <TextBlock Grid.Column="2" Text="{Binding FolderName}" FontSize="13" Foreground="#737373" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
 
+                                <!-- Created Date -->
+                                <TextBlock Grid.Column="3" Text="{Binding CreatedDateText}" FontSize="12.5" Foreground="#8C8C8C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
                                 <!-- Duration -->
-                                <TextBlock Grid.Column="3" Text="{Binding DurationText}" FontSize="13" Foreground="#B3B3B3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="{Binding DurationText}" FontSize="13" Foreground="#B3B3B3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
                                 <!-- Format -->
-                                <Border Grid.Column="4" Background="#1F1F1F" BorderBrush="#2E2E2E" BorderThickness="1" CornerRadius="3" Padding="5,1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Grid.Column="5" Background="#1F1F1F" BorderBrush="#2E2E2E" BorderThickness="1" CornerRadius="3" Padding="5,1" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Extension}" FontSize="12.5" FontWeight="Bold" Foreground="#8C8C8C"/>
                                 </Border>
 
                                 <!-- Size -->
-                                <TextBlock Grid.Column="5" Text="{Binding FileSizeText}" FontSize="12.5" Foreground="#737373" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Grid.Column="6" Text="{Binding FileSizeText}" FontSize="12.5" Foreground="#737373" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

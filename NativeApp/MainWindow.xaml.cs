@@ -472,6 +472,12 @@ namespace ZStationStudio
             SortFolderArrow.Visibility = _sortColumn == "Folder" ? Visibility.Visible : Visibility.Collapsed;
             SortFolderArrow.Text = arrow;
 
+            if (SortCreatedArrow != null)
+            {
+                SortCreatedArrow.Visibility = _sortColumn == "CreatedDate" ? Visibility.Visible : Visibility.Collapsed;
+                SortCreatedArrow.Text = arrow;
+            }
+
             SortDurationArrow.Visibility = _sortColumn == "Duration" ? Visibility.Visible : Visibility.Collapsed;
             SortDurationArrow.Text = arrow;
 
@@ -519,6 +525,7 @@ namespace ZStationStudio
                 if (!string.IsNullOrEmpty(f.Extension)) meta += $" • {f.Extension}{resExtra}";
                 if (!string.IsNullOrEmpty(durStr) && durStr != "--:--") meta += $" • {durStr}";
                 if (!string.IsNullOrEmpty(sizeStr)) meta += $" • {sizeStr}";
+                if (f.CreatedDate != DateTime.MinValue && f.CreatedDate.Year > 1980) meta += $" • {f.CreatedDateText}";
                 if (RightSelectedFileMeta != null) RightSelectedFileMeta.Text = meta;
 
                 if (RightCurrentTagsWrapPanel != null)
@@ -3453,6 +3460,11 @@ namespace ZStationStudio
                         filtered = _isSortAscending
                             ? filtered.OrderBy(x => x.FolderName).ThenBy(x => x.FileName).ToList()
                             : filtered.OrderByDescending(x => x.FolderName).ThenBy(x => x.FileName).ToList();
+                        break;
+                    case "CreatedDate":
+                        filtered = _isSortAscending
+                            ? filtered.OrderBy(x => x.CreatedDate).ThenBy(x => x.FileName).ToList()
+                            : filtered.OrderByDescending(x => x.CreatedDate).ThenBy(x => x.FileName).ToList();
                         break;
                     case "Duration":
                         filtered = _isSortAscending

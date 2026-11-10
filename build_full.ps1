@@ -13,7 +13,7 @@ $proj = Join-Path $baseDir "NativeApp\Z-Station_Studio.csproj"
 $outDir = Join-Path $baseDir "PublishOut"
 
 Write-Host "Stopping any running instances..."
-Get-Process -Name "Z-Station_Studio" -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name "Z-Station_Studio", "z-station" -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Milliseconds 500
 
 Write-Host "Publishing standalone single-file with native libraries..."
@@ -45,9 +45,23 @@ if (-not $copied) {
 }
 Write-Host "Copied to root: $destExe"
 
+$destZStationExe = Join-Path $baseDir "z-station.exe"
+try {
+    Copy-Item $builtExe $destZStationExe -Force
+    Write-Host "Copied to root: $destZStationExe"
+} catch {
+    Write-Host "Warning: Could not copy to $($destZStationExe): $_"
+}
+
 $localApp = Join-Path $env:LOCALAPPDATA "Z-Station_Studio"
 if (Test-Path $localApp) {
     Copy-Item $builtExe (Join-Path $localApp "Z-Station_Studio.exe") -Force
+    Copy-Item $builtExe (Join-Path $localApp "z-station.exe") -Force -ErrorAction SilentlyContinue
+}
+
+$shortcutScript = Join-Path $baseDir "Tao_Shortcut_Desktop.ps1"
+if (Test-Path $shortcutScript) {
+    try { & $shortcutScript } catch { }
 }
 
 $hash = (Get-FileHash -Path $destExe -Algorithm SHA256).Hash

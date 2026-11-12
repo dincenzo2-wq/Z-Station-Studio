@@ -48,5 +48,6 @@ namespace ZStationStudio.Models
         public double Duration { get; set; }
         public long Size { get; set; }
         public string RelativePath { get; set; } = string.Empty;
+        public DateTime? CreatedDate { get; set; }
     }
 }

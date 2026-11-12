@@ -6,6 +6,14 @@ using System.Runtime.CompilerServices;
 
 namespace ZStationStudio.Models
 {
+    public enum FolderDropPosition
+    {
+        None,
+        Above,
+        Inside,
+        Below
+    }
+
     public class VirtualFolderNode : INotifyPropertyChanged
     {
         public string Id { get; set; } = string.Empty;
@@ -147,10 +155,32 @@ namespace ZStationStudio.Models
             }
         }
 
+        private FolderDropPosition _dropPosition = FolderDropPosition.None;
+        public FolderDropPosition DropPosition
+        {
+            get => _dropPosition;
+            set
+            {
+                if (_dropPosition != value)
+                {
+                    _dropPosition = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsDropAbove));
+                    OnPropertyChanged(nameof(IsDropInside));
+                    OnPropertyChanged(nameof(IsDropBelow));
+                    OnPropertyChanged(nameof(IsDropTarget));
+                }
+            }
+        }
+
+        public bool IsDropAbove => _dropPosition == FolderDropPosition.Above;
+        public bool IsDropInside => _dropPosition == FolderDropPosition.Inside;
+        public bool IsDropBelow => _dropPosition == FolderDropPosition.Below;
+
         private bool _isDropTarget;
         public bool IsDropTarget
         {
-            get => _isDropTarget;
+            get => _isDropTarget || IsDropInside;
             set
             {
                 if (_isDropTarget != value)

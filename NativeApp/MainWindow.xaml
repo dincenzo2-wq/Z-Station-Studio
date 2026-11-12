@@ -20,6 +20,7 @@
         DragLeave="MainWindow_DragLeave">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <sys:Double x:Key="ThumbnailCardWidth">240</sys:Double>
         <sys:Double x:Key="ThumbnailCardImageHeight">135</sys:Double>
 
@@ -1378,23 +1379,48 @@
                                 </TreeView.ContextMenu>
                                 <TreeView.ItemTemplate>
                                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                        <Border x:Name="RowBorder" CornerRadius="4" Padding="4,2" Margin="0,1"
-                                                ContextMenu="{StaticResource FolderItemContextMenu}"
-                                                Tag="{Binding}">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    <Setter Property="BorderThickness" Value="1"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
-                                                            <Setter Property="Background" Value="#2A2214"/>
-                                                            <Setter Property="BorderBrush" Value="#C59B27"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <Grid Height="26">
+                                        <Grid Margin="0,1" ClipToBounds="False">
+                                            <!-- Top Insertion Line (Sắp xếp: Thả lên TRƯỚC thư mục này) -->
+                                            <Border VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,-2,0,0" Height="2"
+                                                    Background="#38BDF8" SnapsToDevicePixels="True" IsHitTestVisible="False"
+                                                    Visibility="{Binding IsDropAbove, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                                                <Border.Effect>
+                                                    <DropShadowEffect Color="#38BDF8" BlurRadius="5" ShadowDepth="0" Opacity="0.95"/>
+                                                </Border.Effect>
+                                            </Border>
+                                            <Ellipse VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,-4,0,0" Width="6" Height="6"
+                                                     Fill="#38BDF8" IsHitTestVisible="False"
+                                                     Visibility="{Binding IsDropAbove, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect Color="#38BDF8" BlurRadius="4" ShadowDepth="0" Opacity="0.95"/>
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+
+                                            <!-- Main Row Border -->
+                                            <Border x:Name="RowBorder" CornerRadius="4" Padding="4,2"
+                                                    ContextMenu="{StaticResource FolderItemContextMenu}"
+                                                    Tag="{Binding}">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <!-- Thả VÀO TRONG thư mục: Viền vàng / Nền đậm -->
+                                                            <DataTrigger Binding="{Binding IsDropInside}" Value="True">
+                                                                <Setter Property="Background" Value="#2A2214"/>
+                                                                <Setter Property="BorderBrush" Value="#C59B27"/>
+                                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                                                <Setter Property="Background" Value="#2A2214"/>
+                                                                <Setter Property="BorderBrush" Value="#C59B27"/>
+                                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Height="26">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/> <!-- Icon -->
                                                     <ColumnDefinition Width="*"/>    <!-- Name / Inline Edit -->
@@ -1516,7 +1542,24 @@
                                                 </Border>
                                             </Grid>
                                         </Border>
-                                    </HierarchicalDataTemplate>
+
+                                        <!-- Bottom Insertion Line (Sắp xếp: Thả xuống SAU thư mục này) -->
+                                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,-2" Height="2"
+                                                Background="#38BDF8" SnapsToDevicePixels="True" IsHitTestVisible="False"
+                                                Visibility="{Binding IsDropBelow, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#38BDF8" BlurRadius="5" ShadowDepth="0" Opacity="0.95"/>
+                                            </Border.Effect>
+                                        </Border>
+                                        <Ellipse VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="0,0,0,-4" Width="6" Height="6"
+                                                 Fill="#38BDF8" IsHitTestVisible="False"
+                                                 Visibility="{Binding IsDropBelow, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                                            <Ellipse.Effect>
+                                                <DropShadowEffect Color="#38BDF8" BlurRadius="4" ShadowDepth="0" Opacity="0.95"/>
+                                            </Ellipse.Effect>
+                                        </Ellipse>
+                                    </Grid>
+                                </HierarchicalDataTemplate>
                                 </TreeView.ItemTemplate>
                             </TreeView>
                         </StackPanel>

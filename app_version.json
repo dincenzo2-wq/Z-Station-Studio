@@ -1,10 +1,10 @@
 ﻿{
-    "Version":  "1.3.1",
-    "PublishedAt":  "2026-11-10 15:33",
-    "ReleaseNotes":  "• Bổ sung cột \u0027NGÀY TẠO\u0027 (Date Created) trong bảng danh sách file âm thanh / media, hỗ trợ click sắp xếp tăng dần / giảm dần\n• Đồng bộ 2 chiều hoàn hảo 1:1 giữa Máy A và Máy B qua Dropbox (chỉnh sửa, đổi tên, xóa bin, gắn tag đều đồng bộ tức thì)\n• Tắt tính năng tự động quét lại ổ đĩa ngầm (chỉ quét và nạp khi người dùng chủ động nạp thư mục)",
+    "Version":  "1.3.3",
+    "PublishedAt":  "2026-11-12 12:02",
+    "ReleaseNotes":  "• Kéo thả sắp xếp thư mục (Drag \u0026 Drop Reorder Bins): Hỗ trợ sắp xếp vị trí các thư mục/bin theo ý muốn (cả thư mục gốc lẫn thư mục con).\n• Phân định trực quan giữa Sắp xếp và Bỏ vào trong:\n  - Rê chuột vào mép trên/dưới: Hiện vạch chỉ báo Cyan phát sáng kèm điểm định vị để chèn trước/sau.\n  - Rê chuột vào giữa hàng: Hiện viền sáng vàng nổi bật để lồng vào làm thư mục con.\n  - Tự động ngăn ngừa xung đột và vòng lặp (không thể thả vào chính nó hoặc thư mục con cháu).\n  - Tự động cuộn danh sách mượt mà khi kéo thư mục.",
     "PackageUrl":  "https://github.com/dincenzo2-wq/Z-Station-Studio/raw/main/Z-Station_Studio_Update.zip",
     "ManifestUrl":  "https://raw.githubusercontent.com/dincenzo2-wq/Z-Station-Studio/main/version.json",
-    "PackageSizeBytes":  66329678,
-    "SourceExeLastWriteUtcTicks":  639298964122428515,
-    "SourceExeSha256":  "EC6BEC8018CB36F021822E50EFEBC34BE416C3F16E76FCA863F38DD1B13D15B8"
+    "PackageSizeBytes":  66333303,
+    "SourceExeLastWriteUtcTicks":  639300565630057508,
+    "SourceExeSha256":  "0EBE8B35FE560482D78D224606CBF4FB052F273A6DEC25777371D7A7A647D1B1"
 }

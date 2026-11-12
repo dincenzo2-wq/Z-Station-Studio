@@ -2968,14 +2968,28 @@ namespace ZStationStudio
             {
                 string draggedId = (string)e.Data.GetData("ZStation_VirtualFolder");
                 Point p = e.GetPosition(FolderTreeView);
-                var targetNode = GetVirtualFolderNodeUnderPoint(p);
+                var (targetNode, rowEl) = GetVirtualFolderItemUnderPoint(p);
 
                 ClearAllDropTargets(_rootFolders);
+
+                // Auto-scroll when dragging near top or bottom edges of BinTreeScrollViewer
+                if (BinTreeScrollViewer != null)
+                {
+                    Point pScroll = e.GetPosition(BinTreeScrollViewer);
+                    if (pScroll.Y >= 0 && pScroll.Y < 32)
+                    {
+                        BinTreeScrollViewer.ScrollToVerticalOffset(BinTreeScrollViewer.VerticalOffset - 12);
+                    }
+                    else if (pScroll.Y > BinTreeScrollViewer.ActualHeight - 32 && pScroll.Y <= BinTreeScrollViewer.ActualHeight)
+                    {
+                        BinTreeScrollViewer.ScrollToVerticalOffset(BinTreeScrollViewer.VerticalOffset + 12);
+                    }
+                }
 
                 if (targetNode == null)
                 {
                     var vf = _dataManager.Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase));
-                    if (vf != null && !string.IsNullOrEmpty(vf.ParentId))
+                    if (vf != null)
                     {
                         e.Effects = DragDropEffects.Move;
                     }
@@ -2986,17 +3000,56 @@ namespace ZStationStudio
                 }
                 else
                 {
-                    var vf = _dataManager.Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase));
+                    // Cannot drop onto self or any descendant of dragged folder
                     if (targetNode.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase) ||
-                        (vf != null && string.Equals(vf.ParentId, targetNode.Id, StringComparison.OrdinalIgnoreCase)) ||
                         _dataManager.IsDescendantOf(targetNode.Id, draggedId))
                     {
                         e.Effects = DragDropEffects.None;
                     }
                     else
                     {
+                        var vf = _dataManager.Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase));
+                        bool isCurrentParent = (vf != null && string.Equals(vf.ParentId, targetNode.Id, StringComparison.OrdinalIgnoreCase));
+
+                        FolderDropPosition dropPos = FolderDropPosition.Inside;
+                        if (rowEl != null && rowEl.ActualHeight > 0)
+                        {
+                            Point posInRow = e.GetPosition(rowEl);
+                            double ratio = posInRow.Y / rowEl.ActualHeight;
+
+                            if (isCurrentParent)
+                            {
+                                // Already directly inside targetNode -> cannot nest inside again.
+                                // Split top/bottom to move out as sibling before/after targetNode.
+                                dropPos = (ratio < 0.5) ? FolderDropPosition.Above : FolderDropPosition.Below;
+                            }
+                            else
+                            {
+                                // Split drop zones:
+                                // Top 28% = Sắp xếp lên trước (Above)
+                                // Middle 44% = Bỏ vào trong thư mục (Inside)
+                                // Bottom 28% = Sắp xếp xuống sau (Below)
+                                if (ratio < 0.28)
+                                {
+                                    dropPos = FolderDropPosition.Above;
+                                }
+                                else if (ratio > 0.72)
+                                {
+                                    dropPos = FolderDropPosition.Below;
+                                }
+                                else
+                                {
+                                    dropPos = FolderDropPosition.Inside;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            dropPos = isCurrentParent ? FolderDropPosition.Below : FolderDropPosition.Inside;
+                        }
+
+                        targetNode.DropPosition = dropPos;
                         e.Effects = DragDropEffects.Move;
-                        targetNode.IsDropTarget = true;
                     }
                 }
                 e.Handled = true;
@@ -3011,12 +3064,12 @@ namespace ZStationStudio
                 }
 
                 Point p = e.GetPosition(FolderTreeView);
-                var targetNode = GetVirtualFolderNodeUnderPoint(p);
+                var (targetNode, _) = GetVirtualFolderItemUnderPoint(p);
 
                 ClearAllDropTargets(_rootFolders);
                 if (targetNode != null)
                 {
-                    targetNode.IsDropTarget = true;
+                    targetNode.DropPosition = FolderDropPosition.Inside;
                     ShowExternalDropOverlay($"Thả để Import giữ nguyên cấu trúc vào Bin: \"{targetNode.Name}\"");
                 }
                 else
@@ -3031,44 +3084,81 @@ namespace ZStationStudio
 
         private void FolderTreeView_DragLeave(object sender, DragEventArgs e)
         {
-            ClearAllDropTargets(_rootFolders);
-            HideExternalDropOverlay();
+            Point p = e.GetPosition(FolderTreeView);
+            if (p.X < 0 || p.Y < 0 || p.X > FolderTreeView.ActualWidth || p.Y > FolderTreeView.ActualHeight)
+            {
+                ClearAllDropTargets(_rootFolders);
+                HideExternalDropOverlay();
+            }
         }
 
         private async void FolderTreeView_Drop(object sender, DragEventArgs e)
         {
-            ClearAllDropTargets(_rootFolders);
-            HideExternalDropOverlay();
-
             if (e.Data.GetDataPresent("ZStation_VirtualFolder"))
             {
                 string draggedId = (string)e.Data.GetData("ZStation_VirtualFolder");
                 Point p = e.GetPosition(FolderTreeView);
-                var targetNode = GetVirtualFolderNodeUnderPoint(p);
+                var (targetNode, _) = GetVirtualFolderItemUnderPoint(p);
 
-                string? targetParentId = targetNode?.Id;
+                FolderDropPosition dropPos = targetNode?.DropPosition ?? FolderDropPosition.None;
+                ClearAllDropTargets(_rootFolders);
+                HideExternalDropOverlay();
 
-                bool moved = await _dataManager.MoveVirtualFolderAsync(draggedId, targetParentId);
-                if (moved)
+                if (targetNode == null)
                 {
-                    BuildFolderTree();
-                    if (!string.IsNullOrEmpty(targetParentId))
+                    // Dropped on empty area in FolderTreeView -> move to root at the end
+                    bool moved = await _dataManager.MoveToRootEndAsync(draggedId);
+                    if (moved)
                     {
-                        var pNode = FindNodeInTree(_rootFolders, targetParentId);
-                        if (pNode != null) pNode.IsExpanded = true;
+                        BuildFolderTree();
+                        var movedNode = FindNodeInTree(_rootFolders, draggedId);
+                        if (movedNode != null)
+                        {
+                            movedNode.IsSelected = true;
+                            _selectedVirtualFolder = movedNode;
+                        }
+                        UpdateActiveFolderUI();
+                        ApplyFilter();
                     }
-                    var movedNode = FindNodeInTree(_rootFolders, draggedId);
-                    if (movedNode != null)
+                }
+                else
+                {
+                    if (dropPos == FolderDropPosition.None)
                     {
-                        movedNode.IsSelected = true;
-                        _selectedVirtualFolder = movedNode;
+                        dropPos = FolderDropPosition.Inside;
                     }
-                    UpdateActiveFolderUI();
-                    ApplyFilter();
+
+                    bool moved = await _dataManager.MoveOrReorderVirtualFolderAsync(draggedId, targetNode.Id, dropPos);
+                    if (moved)
+                    {
+                        BuildFolderTree();
+                        if (dropPos == FolderDropPosition.Inside)
+                        {
+                            var pNode = FindNodeInTree(_rootFolders, targetNode.Id);
+                            if (pNode != null) pNode.IsExpanded = true;
+                        }
+                        else if (!string.IsNullOrEmpty(targetNode.ParentId))
+                        {
+                            var pNode = FindNodeInTree(_rootFolders, targetNode.ParentId);
+                            if (pNode != null) pNode.IsExpanded = true;
+                        }
+
+                        var movedNode = FindNodeInTree(_rootFolders, draggedId);
+                        if (movedNode != null)
+                        {
+                            movedNode.IsSelected = true;
+                            _selectedVirtualFolder = movedNode;
+                        }
+                        UpdateActiveFolderUI();
+                        ApplyFilter();
+                    }
                 }
                 e.Handled = true;
                 return;
             }
+
+            ClearAllDropTargets(_rootFolders);
+            HideExternalDropOverlay();
 
             if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
             string[] dropped = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -3076,7 +3166,7 @@ namespace ZStationStudio
 
             e.Handled = true;
             Point pDrop = e.GetPosition(FolderTreeView);
-            var fileTarget = GetVirtualFolderNodeUnderPoint(pDrop);
+            var (fileTarget, _) = GetVirtualFolderItemUnderPoint(pDrop);
 
             // If dropped onto a specific Bin node -> import inside that Bin.
             // If dropped onto empty space in the left Bin tree -> import as a Root Bin (parentFolderId = null)!
@@ -3123,7 +3213,7 @@ namespace ZStationStudio
             if (e.Data.GetDataPresent("ZStation_VirtualFolder"))
             {
                 string draggedId = (string)e.Data.GetData("ZStation_VirtualFolder");
-                bool moved = await _dataManager.MoveVirtualFolderAsync(draggedId, null);
+                bool moved = await _dataManager.MoveToRootEndAsync(draggedId);
                 if (moved)
                 {
                     BuildFolderTree();
@@ -3150,6 +3240,7 @@ namespace ZStationStudio
         {
             foreach (var n in nodes)
             {
+                n.DropPosition = FolderDropPosition.None;
                 n.IsDropTarget = false;
                 ClearAllDropTargets(n.Children);
             }
@@ -3176,18 +3267,41 @@ namespace ZStationStudio
             return null;
         }
 
-        private VirtualFolderNode? GetVirtualFolderNodeUnderPoint(Point p)
+        private (VirtualFolderNode? Node, FrameworkElement? RowElement) GetVirtualFolderItemUnderPoint(Point p)
         {
             var hit = FolderTreeView.InputHitTest(p) as DependencyObject;
+            FrameworkElement? rowEl = null;
+            VirtualFolderNode? targetNode = null;
+            FrameworkElement? lastFe = null;
+
             while (hit != null && hit != FolderTreeView)
             {
-                if (hit is FrameworkElement fe && fe.DataContext is VirtualFolderNode node)
+                if (hit is FrameworkElement fe)
                 {
-                    return node;
+                    if (fe.Name == "RowBorder")
+                    {
+                        rowEl = fe;
+                    }
+                    if (fe.DataContext is VirtualFolderNode node)
+                    {
+                        targetNode = node;
+                        lastFe ??= fe;
+                    }
+                    if (fe is TreeViewItem tvi && targetNode != null)
+                    {
+                        rowEl ??= lastFe ?? tvi;
+                        break;
+                    }
                 }
                 hit = VisualTreeHelper.GetParent(hit);
             }
-            return null;
+
+            return (targetNode, rowEl ?? lastFe);
+        }
+
+        private VirtualFolderNode? GetVirtualFolderNodeUnderPoint(Point p)
+        {
+            return GetVirtualFolderItemUnderPoint(p).Node;
         }
 
         #endregion

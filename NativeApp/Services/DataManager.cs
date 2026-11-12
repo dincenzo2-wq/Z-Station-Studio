@@ -1706,8 +1706,10 @@ namespace ZStationStudio.Services
 
             var roots = new List<VirtualFolderNode>();
 
-            foreach (var node in nodes.Values)
+            foreach (var vf in Settings.VirtualFolders)
             {
+                if (string.IsNullOrWhiteSpace(vf.Id) || !nodes.TryGetValue(vf.Id, out var node)) continue;
+
                 if (string.IsNullOrEmpty(node.ParentId) || !nodes.TryGetValue(node.ParentId, out var parent))
                 {
                     roots.Add(node);
@@ -1961,6 +1963,156 @@ namespace ZStationStudio.Services
             }
 
             vf.ParentId = string.IsNullOrWhiteSpace(newParentId) ? null : newParentId;
+            await SaveSettingsAsync();
+            return true;
+        }
+
+        public async Task<bool> MoveOrReorderVirtualFolderAsync(string draggedId, string targetId, FolderDropPosition position)
+        {
+            if (string.IsNullOrWhiteSpace(draggedId) || string.IsNullOrWhiteSpace(targetId)) return false;
+            if (draggedId.Equals(targetId, StringComparison.OrdinalIgnoreCase)) return false;
+
+            var draggedVf = Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase));
+            var targetVf = Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+            if (draggedVf == null || targetVf == null) return false;
+
+            // Prevent cycles: target cannot be a descendant of dragged
+            if (IsDescendantOf(targetId, draggedId)) return false;
+
+            // Collect dragged folder and all its descendants to move together
+            var itemsToMove = new List<VirtualFolder> { draggedVf };
+            var movedDescendantIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            void CollectDescendants(string pId)
+            {
+                var children = Settings.VirtualFolders.Where(f => string.Equals(f.ParentId, pId, StringComparison.OrdinalIgnoreCase)).ToList();
+                foreach (var c in children)
+                {
+                    if (movedDescendantIds.Add(c.Id))
+                    {
+                        itemsToMove.Add(c);
+                        CollectDescendants(c.Id);
+                    }
+                }
+            }
+            CollectDescendants(draggedVf.Id);
+
+            // Remove from list first
+            Settings.VirtualFolders.RemoveAll(f => itemsToMove.Contains(f));
+
+            if (position == FolderDropPosition.Inside)
+            {
+                draggedVf.ParentId = targetVf.Id;
+                targetVf.IsOpen = true;
+
+                int targetIdx = Settings.VirtualFolders.IndexOf(targetVf);
+                if (targetIdx < 0)
+                {
+                    Settings.VirtualFolders.AddRange(itemsToMove);
+                }
+                else
+                {
+                    var targetSubtreeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    void FindTargetDescendants(string pId)
+                    {
+                        foreach (var f in Settings.VirtualFolders)
+                        {
+                            if (string.Equals(f.ParentId, pId, StringComparison.OrdinalIgnoreCase) && targetSubtreeIds.Add(f.Id))
+                            {
+                                FindTargetDescendants(f.Id);
+                            }
+                        }
+                    }
+                    FindTargetDescendants(targetVf.Id);
+
+                    int lastTargetSubtreeIdx = targetIdx;
+                    for (int i = targetIdx + 1; i < Settings.VirtualFolders.Count; i++)
+                    {
+                        if (targetSubtreeIds.Contains(Settings.VirtualFolders[i].Id))
+                        {
+                            lastTargetSubtreeIdx = i;
+                        }
+                    }
+                    Settings.VirtualFolders.InsertRange(lastTargetSubtreeIdx + 1, itemsToMove);
+                }
+            }
+            else if (position == FolderDropPosition.Above)
+            {
+                draggedVf.ParentId = targetVf.ParentId;
+                int targetIdx = Settings.VirtualFolders.IndexOf(targetVf);
+                if (targetIdx < 0)
+                {
+                    Settings.VirtualFolders.AddRange(itemsToMove);
+                }
+                else
+                {
+                    Settings.VirtualFolders.InsertRange(targetIdx, itemsToMove);
+                }
+            }
+            else // FolderDropPosition.Below
+            {
+                draggedVf.ParentId = targetVf.ParentId;
+                int targetIdx = Settings.VirtualFolders.IndexOf(targetVf);
+                if (targetIdx < 0)
+                {
+                    Settings.VirtualFolders.AddRange(itemsToMove);
+                }
+                else
+                {
+                    var targetSubtreeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    void FindTargetDescendants(string pId)
+                    {
+                        foreach (var f in Settings.VirtualFolders)
+                        {
+                            if (string.Equals(f.ParentId, pId, StringComparison.OrdinalIgnoreCase) && targetSubtreeIds.Add(f.Id))
+                            {
+                                FindTargetDescendants(f.Id);
+                            }
+                        }
+                    }
+                    FindTargetDescendants(targetVf.Id);
+
+                    int lastTargetSubtreeIdx = targetIdx;
+                    for (int i = targetIdx + 1; i < Settings.VirtualFolders.Count; i++)
+                    {
+                        if (targetSubtreeIds.Contains(Settings.VirtualFolders[i].Id))
+                        {
+                            lastTargetSubtreeIdx = i;
+                        }
+                    }
+                    Settings.VirtualFolders.InsertRange(lastTargetSubtreeIdx + 1, itemsToMove);
+                }
+            }
+
+            await SaveSettingsAsync();
+            return true;
+        }
+
+        public async Task<bool> MoveToRootEndAsync(string folderId)
+        {
+            var draggedVf = Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(folderId, StringComparison.OrdinalIgnoreCase));
+            if (draggedVf == null) return false;
+
+            draggedVf.ParentId = null;
+
+            var itemsToMove = new List<VirtualFolder> { draggedVf };
+            var movedDescendantIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            void CollectDescendants(string pId)
+            {
+                var children = Settings.VirtualFolders.Where(f => string.Equals(f.ParentId, pId, StringComparison.OrdinalIgnoreCase)).ToList();
+                foreach (var c in children)
+                {
+                    if (movedDescendantIds.Add(c.Id))
+                    {
+                        itemsToMove.Add(c);
+                        CollectDescendants(c.Id);
+                    }
+                }
+            }
+            CollectDescendants(draggedVf.Id);
+
+            Settings.VirtualFolders.RemoveAll(f => itemsToMove.Contains(f));
+            Settings.VirtualFolders.AddRange(itemsToMove);
+
             await SaveSettingsAsync();
             return true;
         }

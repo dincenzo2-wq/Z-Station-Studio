@@ -1,10 +1,10 @@
 ﻿{
     "Version":  "1.3.3",
-    "PublishedAt":  "2026-11-12 12:02",
+    "PublishedAt":  "2026-11-12 12:20",
     "ReleaseNotes":  "• Kéo thả sắp xếp thư mục (Drag \u0026 Drop Reorder Bins): Hỗ trợ sắp xếp vị trí các thư mục/bin theo ý muốn (cả thư mục gốc lẫn thư mục con).\n• Phân định trực quan giữa Sắp xếp và Bỏ vào trong:\n  - Rê chuột vào mép trên/dưới: Hiện vạch chỉ báo Cyan phát sáng kèm điểm định vị để chèn trước/sau.\n  - Rê chuột vào giữa hàng: Hiện viền sáng vàng nổi bật để lồng vào làm thư mục con.\n  - Tự động ngăn ngừa xung đột và vòng lặp (không thể thả vào chính nó hoặc thư mục con cháu).\n  - Tự động cuộn danh sách mượt mà khi kéo thư mục.",
     "PackageUrl":  "https://github.com/dincenzo2-wq/Z-Station-Studio/raw/main/Z-Station_Studio_Update.zip",
     "ManifestUrl":  "https://raw.githubusercontent.com/dincenzo2-wq/Z-Station-Studio/main/version.json",
-    "PackageSizeBytes":  66333303,
-    "SourceExeLastWriteUtcTicks":  639300565630057508,
-    "SourceExeSha256":  "0EBE8B35FE560482D78D224606CBF4FB052F273A6DEC25777371D7A7A647D1B1"
+    "PackageSizeBytes":  66331781,
+    "SourceExeLastWriteUtcTicks":  639300576236156506,
+    "SourceExeSha256":  "00898F24AC7EE6B47A11536E86DFE637D0AE3702ED0864861A4C128430DF9987"
 }

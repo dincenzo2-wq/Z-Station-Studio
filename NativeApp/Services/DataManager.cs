@@ -1967,7 +1967,24 @@ namespace ZStationStudio.Services
             return true;
         }
 
-        public async Task<bool> MoveOrReorderVirtualFolderAsync(string draggedId, string targetId, FolderDropPosition position)
+        public VirtualFolder GetRootAncestor(VirtualFolder vf)
+        {
+            var cur = vf;
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            while (!string.IsNullOrEmpty(cur.ParentId) && visited.Add(cur.Id))
+            {
+                var parent = Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(cur.ParentId, StringComparison.OrdinalIgnoreCase));
+                if (parent == null) break;
+                cur = parent;
+            }
+            return cur;
+        }
+
+        public async Task<bool> MoveOrReorderVirtualFolderAsync(
+            string draggedId,
+            string targetId,
+            FolderDropPosition position,
+            bool forceRootLevel = false)
         {
             if (string.IsNullOrWhiteSpace(draggedId) || string.IsNullOrWhiteSpace(targetId)) return false;
             if (draggedId.Equals(targetId, StringComparison.OrdinalIgnoreCase)) return false;
@@ -1998,6 +2015,9 @@ namespace ZStationStudio.Services
 
             // Remove from list first
             Settings.VirtualFolders.RemoveAll(f => itemsToMove.Contains(f));
+
+            // If dragged item was already at root level, keep it at root level unless explicitly dropped INSIDE!
+            bool keepAtRoot = forceRootLevel || (string.IsNullOrEmpty(draggedVf.ParentId) && position != FolderDropPosition.Inside);
 
             if (position == FolderDropPosition.Inside)
             {
@@ -2033,6 +2053,47 @@ namespace ZStationStudio.Services
                         }
                     }
                     Settings.VirtualFolders.InsertRange(lastTargetSubtreeIdx + 1, itemsToMove);
+                }
+            }
+            else if (keepAtRoot)
+            {
+                draggedVf.ParentId = null; // Guarantee root level
+
+                var rootRef = GetRootAncestor(targetVf);
+                int rootIdx = Settings.VirtualFolders.IndexOf(rootRef);
+
+                if (rootIdx < 0)
+                {
+                    Settings.VirtualFolders.AddRange(itemsToMove);
+                }
+                else if (position == FolderDropPosition.Above)
+                {
+                    Settings.VirtualFolders.InsertRange(rootIdx, itemsToMove);
+                }
+                else // FolderDropPosition.Below
+                {
+                    var rootSubtreeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    void FindRootDescendants(string pId)
+                    {
+                        foreach (var f in Settings.VirtualFolders)
+                        {
+                            if (string.Equals(f.ParentId, pId, StringComparison.OrdinalIgnoreCase) && rootSubtreeIds.Add(f.Id))
+                            {
+                                FindRootDescendants(f.Id);
+                            }
+                        }
+                    }
+                    FindRootDescendants(rootRef.Id);
+
+                    int lastRootSubtreeIdx = rootIdx;
+                    for (int i = rootIdx + 1; i < Settings.VirtualFolders.Count; i++)
+                    {
+                        if (rootSubtreeIds.Contains(Settings.VirtualFolders[i].Id))
+                        {
+                            lastRootSubtreeIdx = i;
+                        }
+                    }
+                    Settings.VirtualFolders.InsertRange(lastRootSubtreeIdx + 1, itemsToMove);
                 }
             }
             else if (position == FolderDropPosition.Above)

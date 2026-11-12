@@ -2171,6 +2171,33 @@ namespace ZStationStudio
             }
         }
 
+        private async void MoveFolderToRootMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var node = GetContextMenuFolderNode(sender);
+            if (node == null) return;
+
+            if (string.IsNullOrEmpty(node.ParentId))
+            {
+                ZDialog.Show($"Thư mục \"{node.Name}\" đã ở cấp ngoài cùng (Thư mục gốc) rồi.", "Thông báo", ZDialogKind.Info, owner: this);
+                return;
+            }
+
+            bool moved = await _dataManager.MoveVirtualFolderAsync(node.Id, null);
+            if (moved)
+            {
+                BuildFolderTree();
+                var movedNode = FindNodeInTree(_rootFolders, node.Id);
+                if (movedNode != null)
+                {
+                    movedNode.IsSelected = true;
+                    _selectedVirtualFolder = movedNode;
+                }
+                UpdateActiveFolderUI();
+                ApplyFilter();
+                ZDialog.Show($"Đã đưa \"{node.Name}\" ra ngoài cùng thành thư mục gốc.", "Thành công", ZDialogKind.Success, owner: this);
+            }
+        }
+
         private void BinRowLinkBtn_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
@@ -3010,6 +3037,10 @@ namespace ZStationStudio
                     {
                         var vf = _dataManager.Settings.VirtualFolders.FirstOrDefault(f => f.Id.Equals(draggedId, StringComparison.OrdinalIgnoreCase));
                         bool isCurrentParent = (vf != null && string.Equals(vf.ParentId, targetNode.Id, StringComparison.OrdinalIgnoreCase));
+                        bool isDraggedRoot = (vf != null && string.IsNullOrEmpty(vf.ParentId));
+
+                        // Left margin check: if mouse X < 36, user explicitly intends ROOT LEVEL insertion (đưa ra ngoài cùng)
+                        bool isLeftMargin = (p.X < 36);
 
                         FolderDropPosition dropPos = FolderDropPosition.Inside;
                         if (rowEl != null && rowEl.ActualHeight > 0)
@@ -3017,15 +3048,35 @@ namespace ZStationStudio
                             Point posInRow = e.GetPosition(rowEl);
                             double ratio = posInRow.Y / rowEl.ActualHeight;
 
-                            if (isCurrentParent)
+                            if (isLeftMargin)
+                            {
+                                // In the left margin, NEVER nest inside; strictly reorder at root level
+                                dropPos = (ratio < 0.5) ? FolderDropPosition.Above : FolderDropPosition.Below;
+                            }
+                            else if (isCurrentParent)
                             {
                                 // Already directly inside targetNode -> cannot nest inside again.
-                                // Split top/bottom to move out as sibling before/after targetNode.
                                 dropPos = (ratio < 0.5) ? FolderDropPosition.Above : FolderDropPosition.Below;
+                            }
+                            else if (isDraggedRoot && !string.IsNullOrEmpty(targetNode.ParentId))
+                            {
+                                // A root folder dragged over a subfolder: default to reordering at root level unless mouse is explicitly in center
+                                if (ratio < 0.3)
+                                {
+                                    dropPos = FolderDropPosition.Above;
+                                }
+                                else if (ratio > 0.7)
+                                {
+                                    dropPos = FolderDropPosition.Below;
+                                }
+                                else
+                                {
+                                    dropPos = FolderDropPosition.Inside;
+                                }
                             }
                             else
                             {
-                                // Split drop zones:
+                                // Standard zones:
                                 // Top 28% = Sắp xếp lên trước (Above)
                                 // Middle 44% = Bỏ vào trong thư mục (Inside)
                                 // Bottom 28% = Sắp xếp xuống sau (Below)
@@ -3104,6 +3155,8 @@ namespace ZStationStudio
                 ClearAllDropTargets(_rootFolders);
                 HideExternalDropOverlay();
 
+                bool isLeftMargin = (p.X < 36);
+
                 if (targetNode == null)
                 {
                     // Dropped on empty area in FolderTreeView -> move to root at the end
@@ -3125,10 +3178,10 @@ namespace ZStationStudio
                 {
                     if (dropPos == FolderDropPosition.None)
                     {
-                        dropPos = FolderDropPosition.Inside;
+                        dropPos = isLeftMargin ? FolderDropPosition.Below : FolderDropPosition.Inside;
                     }
 
-                    bool moved = await _dataManager.MoveOrReorderVirtualFolderAsync(draggedId, targetNode.Id, dropPos);
+                    bool moved = await _dataManager.MoveOrReorderVirtualFolderAsync(draggedId, targetNode.Id, dropPos, forceRootLevel: isLeftMargin);
                     if (moved)
                     {
                         BuildFolderTree();
@@ -3137,7 +3190,7 @@ namespace ZStationStudio
                             var pNode = FindNodeInTree(_rootFolders, targetNode.Id);
                             if (pNode != null) pNode.IsExpanded = true;
                         }
-                        else if (!string.IsNullOrEmpty(targetNode.ParentId))
+                        else if (!string.IsNullOrEmpty(targetNode.ParentId) && !isLeftMargin)
                         {
                             var pNode = FindNodeInTree(_rootFolders, targetNode.ParentId);
                             if (pNode != null) pNode.IsExpanded = true;
@@ -3182,6 +3235,7 @@ namespace ZStationStudio
                 if (vf != null && !string.IsNullOrEmpty(vf.ParentId))
                 {
                     e.Effects = DragDropEffects.Move;
+                    ShowExternalDropOverlay("Thả vào đây để đưa thư mục ra ngoài cùng (Thành thư mục gốc)");
                 }
                 else
                 {
@@ -3203,6 +3257,11 @@ namespace ZStationStudio
                 e.Effects = DragDropEffects.Copy;
                 e.Handled = true;
             }
+        }
+
+        private void AllSfxFolderBtn_DragLeave(object sender, DragEventArgs e)
+        {
+            HideExternalDropOverlay();
         }
 
         private async void AllSfxFolderBtn_Drop(object sender, DragEventArgs e)

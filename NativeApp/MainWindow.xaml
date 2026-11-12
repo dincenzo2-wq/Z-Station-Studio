@@ -234,6 +234,11 @@
                 </MenuItem.Icon>
             </MenuItem>
             <Separator/>
+            <MenuItem Header="Đưa ra ngoài cùng (Thành thư mục gốc)" Click="MoveFolderToRootMenuItem_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource IconFolder}" Stroke="#38BDF8" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent" Width="14" Height="14" Stretch="Uniform"/>
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Tạo Bin con..." Click="CreateSubBinMenuItem_Click">
                 <MenuItem.Icon>
                     <Path Data="{StaticResource IconFolderPlus}" Stroke="#B3B3B3" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent" Width="14" Height="14" Stretch="Uniform"/>
@@ -1296,6 +1301,7 @@
                                     Cursor="Hand"
                                     AllowDrop="True"
                                     DragOver="AllSfxFolderBtn_DragOver"
+                                    DragLeave="AllSfxFolderBtn_DragLeave"
                                     Drop="AllSfxFolderBtn_Drop"
                                     Click="AllSfxFolderBtn_Click">
                                 <Button.Template>
